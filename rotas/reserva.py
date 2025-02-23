@@ -11,11 +11,14 @@ router = APIRouter(
 db = get_engine();
 
 @router.get("/reservas/todas/", response_model=list[Reserva])
-async def get_all_reservas() -> list[Reserva]:
-    
+async def get_all_reservas(mes: str = None) -> list[Reserva]:
     reservas = await db.find(Reserva)
 
+    if mes:
+        reservas = [reserva for reserva in reservas if reserva.horario[3:5] == mes]
+
     return reservas
+
 
 @router.get("/reservas/buscar/{reserva_id}/", response_model=Reserva)
 async def get_reserva(reserva_id: str) -> Reserva:
@@ -72,24 +75,29 @@ async def delete_reserva(reserva_id: str) -> Reserva:
 
 @router.get("/clientes/{usuario_nome}", response_model=list[dict])
 async def reservas_do_cliente(usuario_nome: str):
-
-    usuario = await db.find_one(Usuario, Usuario.nome == usuario_nome)
-    
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuario não encontrado")
-
     pipeline = [
         {
             "$match": {
-            "usuario": usuario.id
+                "nome": {"$regex": usuario_nome, "$options": "i"}
             }
         },
         {
             "$lookup": {
-            "from": "mesa",
-            "localField": "mesa",
-            "foreignField": "_id",
-            "as": "mesa_info"
+                "from": "reserva",
+                "localField": "_id",
+                "foreignField": "usuario",
+                "as": "reservas"
+            }
+        },
+        {
+            "$unwind": "$reservas"
+        },
+        {
+            "$lookup": {
+                "from": "mesa",
+                "localField": "reservas.mesa",
+                "foreignField": "_id",
+                "as": "mesa_info"
             }
         },
         {
@@ -97,10 +105,10 @@ async def reservas_do_cliente(usuario_nome: str):
         },
         {
             "$lookup": {
-            "from": "restaurante",
-            "localField": "mesa_info.restaurante",
-            "foreignField": "_id",
-            "as": "restaurante_info"
+                "from": "restaurante",
+                "localField": "mesa_info.restaurante",
+                "foreignField": "_id",
+                "as": "restaurante_info"
             }
         },
         {
@@ -108,14 +116,15 @@ async def reservas_do_cliente(usuario_nome: str):
         },
         {
             "$project": {
-            "_id": 0,
-            "mesa": "$mesa_info.numero",
-            "horario": "$horario",
-            "restaurante": "$restaurante_info.nome"
+                "_id": 0,
+                "usuario": "$nome",
+                "mesa": "$mesa_info.numero",
+                "horario": "$reservas.horario",
+                "restaurante": "$restaurante_info.nome"
             }
         }
     ]
 
-    resultado = await db.get_collection(Reserva).aggregate(pipeline).to_list(None)
+    resultado = await db.get_collection(Usuario).aggregate(pipeline).to_list(None)
 
     return resultado

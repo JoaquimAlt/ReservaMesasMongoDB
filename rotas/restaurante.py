@@ -67,12 +67,12 @@ async def listar_mesas_restaurante(restaurante_nome: str) -> list[Mesa]:
     restaurante = await db.find_one(Restaurante, Restaurante.nome == restaurante_nome)
 
     if not restaurante:
-        raise HTTPException(status_code=404, detail="Restaurate não encontrado")
+        raise HTTPException(status_code=404, detail="Restaurante não encontrado")
     
     mesas_cursor = db.get_collection(Mesa).find(
         {"restaurante": restaurante.id},
         {"_id": 0, "restaurante": 0}
-    )
+    ).sort("numero", 1)  
 
     quantidade_mesas = await db.get_collection(Mesa).count_documents({"restaurante": restaurante.id})
 
@@ -83,4 +83,5 @@ async def listar_mesas_restaurante(restaurante_nome: str) -> list[Mesa]:
         "quantidade de mesas do restaurante": quantidade_mesas,
         "mesas": mesas
     }
+
 
