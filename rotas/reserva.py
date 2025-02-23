@@ -11,11 +11,9 @@ router = APIRouter(
 db = get_engine();
 
 @router.get("/reservas/todas/", response_model=list[Reserva])
-async def get_all_reservas(mes: str = None) -> list[Reserva]:
+async def get_all_reservas() -> list[Reserva]:
+    
     reservas = await db.find(Reserva)
-
-    if mes:
-        reservas = [reserva for reserva in reservas if reserva.horario[3:5] == mes]
 
     return reservas
 
@@ -73,7 +71,7 @@ async def delete_reserva(reserva_id: str) -> Reserva:
     
     return reserva
 
-@router.get("/clientes/{usuario_nome}", response_model=list[dict])
+@router.get("/clientes/{usuario_nome}/", response_model=list[dict])
 async def reservas_do_cliente(usuario_nome: str):
     pipeline = [
         {
@@ -128,3 +126,12 @@ async def reservas_do_cliente(usuario_nome: str):
     resultado = await db.get_collection(Usuario).aggregate(pipeline).to_list(None)
 
     return resultado
+
+@router.get("/reservas/data/", response_model=list[Reserva])
+async def get_reserva_por_data(mes: str = None) -> list[Reserva]:
+    reservas = await db.find(Reserva)
+
+    if mes:
+        reservas = [reserva for reserva in reservas if reserva.horario[3:5] == mes]
+
+    return reservas

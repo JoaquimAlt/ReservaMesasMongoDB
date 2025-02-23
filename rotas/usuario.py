@@ -60,7 +60,7 @@ async def delete_usuario(usuario_id: str) -> Usuario:
     
     return usuario
 
-@router.get("restaurantes/{usuario_nome}", response_model=list[dict])
+@router.get("/restaurantes/{usuario_nome}", response_model=list[dict])
 async def buscar_usuarios(usuario_nome: str):
             
         pipeline = [
