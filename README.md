@@ -27,5 +27,5 @@ classDiagram
     Usuario "1" -- "0..*" Reserva : faz
     Mesa "1" -- "0..*" Reserva : possui
     Restaurante "1" -- "0..*" Mesa : contém
-    Restaurante "1..*" -- "1..* Reserva : dividem
+    Restaurante "1..*" -- "1..*" Reserva : dividem
 ```
